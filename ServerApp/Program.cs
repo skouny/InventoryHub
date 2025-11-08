@@ -16,7 +16,8 @@ var app = builder.Build();
 // Enable CORS
 app.UseCors("AllowBlazorClient");
 
-app.MapGet("/api/products", () =>
+// Updated endpoint to /api/productlist
+app.MapGet("/api/productlist", () =>
 {
     return new[]
     {

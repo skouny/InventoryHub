@@ -34,31 +34,48 @@ else
     private Product[]? products;
     private bool isLoading = true;
     private string? errorMessage;
+    
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // Call the API endpoint with proper error handling
-            var response = await Http.GetAsync("http://localhost:5074/api/products");
+            // Call the updated API endpoint with proper error handling
+            var response = await Http.GetAsync("http://localhost:5074/api/productlist");
+            response.EnsureSuccessStatusCode();
             
-            if (response.IsSuccessStatusCode)
+            // Get the JSON string for better error handling
+            var json = await response.Content.ReadAsStringAsync();
+            
+            // Deserialize the JSON response into Product array with error handling
+            products = System.Text.Json.JsonSerializer.Deserialize<Product[]>(json, 
+                new System.Text.Json.JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true 
+                });
+            
+            if (products == null)
             {
-                // Deserialize the JSON response into Product array
-                products = await response.Content.ReadFromJsonAsync<Product[]>();
-                errorMessage = null;
+                errorMessage = "Failed to deserialize product data.";
             }
             else
             {
-                errorMessage = $"Failed to fetch products. Status code: {response.StatusCode}";
+                errorMessage = null;
             }
         }
         catch (HttpRequestException ex)
         {
             errorMessage = $"Network error: {ex.Message}. Please ensure the server is running.";
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            errorMessage = $"JSON parsing error: {ex.Message}. The API response format may be incorrect.";
+            Console.WriteLine($"Error: {ex.Message}");
         }
         catch (Exception ex)
         {
             errorMessage = $"Unexpected error: {ex.Message}";
+            Console.WriteLine($"Error: {ex.Message}");
         }
         finally
         {
