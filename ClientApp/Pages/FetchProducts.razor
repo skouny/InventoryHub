@@ -40,27 +40,53 @@ else
 }
 
 @code {
+    // Component state variables
     private Product[]? products;
     private bool isLoading = true;
     private string? errorMessage;
+    
+    // Static cache to prevent redundant API calls (Activity 4 - Performance optimization)
+    // Copilot suggested using a static cache to store products across component instances
+    private static Product[]? cachedProducts;
+    private static DateTime? cacheExpiration;
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(60);
 
+    /// <summary>
+    /// Initializes the component and fetches product data from the API
+    /// Activity 1: Initial integration code generated with Copilot
+    /// Activity 2: Enhanced with robust error handling
+    /// Activity 3: Updated to support nested JSON structures (Category objects)
+    /// Activity 4: Optimized with client-side caching to reduce redundant API calls
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            // Check if cached data is still valid (Activity 4 - Performance optimization)
+            // Copilot helped implement this caching strategy to minimize API calls
+            if (cachedProducts != null && cacheExpiration.HasValue && DateTime.Now < cacheExpiration.Value)
+            {
+                products = cachedProducts;
+                errorMessage = null;
+                return;
+            }
+
             // Call the updated API endpoint with proper error handling
+            // Activity 2: Updated route from /api/products to /api/productlist
             var response = await Http.GetAsync("http://localhost:5074/api/productlist");
             response.EnsureSuccessStatusCode();
 
-            // Get the JSON string for better error handling
+            // Get the JSON string for better error handling (Activity 2)
             var json = await response.Content.ReadAsStringAsync();
 
             // Deserialize the JSON response into Product array with error handling
+            // Activity 3: Updated to support nested Category objects
+            // Copilot suggested PropertyNameCaseInsensitive for robust parsing
             products = System.Text.Json.JsonSerializer.Deserialize<Product[]>(json,
-            new System.Text.Json.JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+                new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
 
             if (products == null)
             {
@@ -68,21 +94,28 @@ else
             }
             else
             {
+                // Cache the successful response (Activity 4)
+                cachedProducts = products;
+                cacheExpiration = DateTime.Now.Add(CacheDuration);
                 errorMessage = null;
             }
         }
         catch (HttpRequestException ex)
         {
+            // Network error handling (Activity 2)
             errorMessage = $"Network error: {ex.Message}. Please ensure the server is running.";
             Console.WriteLine($"Error: {ex.Message}");
         }
         catch (System.Text.Json.JsonException ex)
         {
+            // JSON parsing error handling (Activity 2)
+            // Copilot suggested specific JsonException handling for malformed responses
             errorMessage = $"JSON parsing error: {ex.Message}. The API response format may be incorrect.";
             Console.WriteLine($"Error: {ex.Message}");
         }
         catch (Exception ex)
         {
+            // General error handling (Activity 2)
             errorMessage = $"Unexpected error: {ex.Message}";
             Console.WriteLine($"Error: {ex.Message}");
         }
@@ -92,6 +125,10 @@ else
         }
     }
 
+    /// <summary>
+    /// Product model class matching the API response structure
+    /// Activity 3: Extended with Category property for nested JSON support
+    /// </summary>
     public class Product
     {
         public int Id { get; set; }
@@ -101,6 +138,11 @@ else
         public Category? Category { get; set; }
     }
 
+    /// <summary>
+    /// Category model class for nested JSON structure
+    /// Activity 3: Added to support nested category objects in the API response
+    /// Copilot helped design this model to match the backend JSON structure
+    /// </summary>
     public class Category
     {
         public int Id { get; set; }
