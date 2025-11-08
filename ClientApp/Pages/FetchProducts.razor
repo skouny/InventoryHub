@@ -1,26 +1,69 @@
 @page "/fetchproducts"
+@inject HttpClient Http
 
 <h3>Product List</h3>
 
-<ul>
-    @if (products != null)
-    {
-        foreach (var product in products)
+@if (isLoading)
+{
+    <p><em>Loading products...</em></p>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        <strong>Error:</strong> @errorMessage
+    </div>
+}
+else if (products != null && products.Length > 0)
+{
+    <ul class="list-group">
+        @foreach (var product in products)
         {
-            <li>@product.Name - $@product.Price</li>
+            <li class="list-group-item">
+                <strong>@product.Name</strong> - $@product.Price.ToString("F2")
+                <span class="badge bg-primary rounded-pill float-end">Stock: @product.Stock</span>
+            </li>
         }
-    }
-    else
-    {
-        <li>Loading...</li>
-    }
-</ul>
+    </ul>
+}
+else
+{
+    <p>No products available.</p>
+}
 
 @code {
     private Product[]? products;
+    private bool isLoading = true;
+    private string? errorMessage;
     protected override async Task OnInitializedAsync()
     {
-        // API call logic will go here
+        try
+        {
+            // Call the API endpoint with proper error handling
+            var response = await Http.GetAsync("http://localhost:5074/api/products");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                // Deserialize the JSON response into Product array
+                products = await response.Content.ReadFromJsonAsync<Product[]>();
+                errorMessage = null;
+            }
+            else
+            {
+                errorMessage = $"Failed to fetch products. Status code: {response.StatusCode}";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"Network error: {ex.Message}. Please ensure the server is running.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unexpected error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     public class Product
