@@ -19,8 +19,17 @@ else if (products != null && products.Length > 0)
         @foreach (var product in products)
         {
             <li class="list-group-item">
-                <strong>@product.Name</strong> - $@product.Price.ToString("F2")
-                <span class="badge bg-primary rounded-pill float-end">Stock: @product.Stock</span>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>@product.Name</strong> - $@product.Price.ToString("F2")
+                        @if (product.Category != null)
+                        {
+                            <br />
+                            <small class="text-muted">Category: @product.Category.Name</small>
+                        }
+                    </div>
+                    <span class="badge bg-primary rounded-pill">Stock: @product.Stock</span>
+                </div>
             </li>
         }
     </ul>
@@ -81,13 +90,18 @@ else
         {
             isLoading = false;
         }
-    }
-
-    public class Product
+    }    public class Product
     {
         public int Id { get; set; }
         public string? Name { get; set; }
         public double Price { get; set; }
         public int Stock { get; set; }
+        public Category? Category { get; set; }
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
     }
 }
